@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Grid,
   Segment,
@@ -11,20 +11,45 @@ import {
 } from "semantic-ui-react";
 import { useForm } from "react-hook-form";
 import useClipboard from "react-use-clipboard";
+import axios from "axios";
 
 const Configuration = () => {
   const { register, handleSubmit } = useForm();
-  const [appDragAppName, setAppDragAppName] = useState("");
+  const [appNameInput, setAppNameInput] = useState("");
+  const [appName, setAppName] = useState("");
+  const [workerScript, setWorkerScript] = useState("");
 
   const [isCopied, setCopied] = useClipboard("Hello", {
     successDuration: 1000,
   });
 
-  const handleappDragAppName = (e) => {
-    setAppDragAppName(e.target.value);
+  // Update worker script
+  useEffect(() => {
+    updateWorkerScript(appName);
+  }, [appName]);
+
+  // Update app name
+  useEffect(() => {
+    if (isValidAppName(appNameInput)) setAppName(appNameInput);
+  }, [appNameInput]);
+
+  const updateWorkerScript = async (appName) => {
+    await axios
+      .post("http://localhost:3001/api/worker", {
+        appName: appName,
+      })
+      .then((response) => {
+        console.log(response.data[0].value);
+        setWorkerScript(response.data[0].value);
+      });
   };
 
-  const isValidAppDragAppName = (appDragAppName) => {
+  const handleAppNameInput = (e) => {
+    e.preventDefault();
+    setAppNameInput(e.target.value);
+  };
+
+  const isValidAppName = (appDragAppName) => {
     if (appDragAppName === "") return true;
     var validSubdomainMatches = appDragAppName.match(
       /[A-Za-z0-9](?:[A-Za-z0-9\-]{0,61}[A-Za-z0-9])?/g
@@ -53,10 +78,10 @@ const Configuration = () => {
                   labelPosition="right"
                   placeholder={"yourappname"}
                   ref={register({ required: true })}
-                  onChange={handleappDragAppName}
+                  onChange={handleAppNameInput}
                 />
               </Form.Field>
-              {isValidAppDragAppName(appDragAppName) ? (
+              {isValidAppName(appNameInput) ? (
                 ""
               ) : (
                 <Label basic color="red" pointing>
@@ -70,13 +95,13 @@ const Configuration = () => {
                 color="teal"
                 size="large"
                 type="submit"
-                disabled={!isValidAppDragAppName(appDragAppName)}
+                disabled={!isValidAppName(appNameInput)}
               >
                 {!isCopied ? "COPY CODE" : "COPIED"}
               </Button>
             </Segment>
             <Transition
-              visible={isValidAppDragAppName(appDragAppName)}
+              visible={isValidAppName(appNameInput)}
               animation="scale"
               duration={500}
             >
@@ -84,14 +109,14 @@ const Configuration = () => {
                 basic
                 style={{
                   textAlign: "center",
-                  // visibility: isValidAppDragAppName(appDragAppName)
+                  // visibility: isValidAppDragAppName(appNameInput)
                   //   ? "visible"
                   //   : "hidden",
                 }}
               >
                 <TextArea
                   placeholder="Cloudflare Worker code..."
-                  value={isValidAppDragAppName(appDragAppName) ? "Hello" : ""}
+                  value={isValidAppName(appNameInput) ? workerScript : ""}
                   rows={10}
                 />
               </Segment>

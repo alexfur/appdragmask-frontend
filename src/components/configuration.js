@@ -16,7 +16,7 @@ import axios from "axios";
 const Configuration = () => {
   const { register, handleSubmit } = useForm();
   const [appNameInput, setAppNameInput] = useState("");
-  const [appName, setAppName] = useState("");
+  const [isValidAppName, setIsValidAppName] = useState(true);
   const [workerScript, setWorkerScript] = useState("");
 
   const [isCopied, setCopied] = useClipboard(workerScript, {
@@ -25,12 +25,7 @@ const Configuration = () => {
 
   // Update worker script
   useEffect(() => {
-    updateWorkerScript(appName);
-  }, [appName]);
-
-  // Update app name
-  useEffect(() => {
-    if (isValidAppName(appNameInput)) setAppName(appNameInput);
+    updateWorkerScript(appNameInput);
   }, [appNameInput]);
 
   const updateWorkerScript = async (appName) => {
@@ -39,26 +34,25 @@ const Configuration = () => {
         appName: appName,
       })
       .then((response) => {
-        console.log(response.data[0].value);
-        setWorkerScript(response.data[0].value);
+        console.log(response);
+        if (response.data.type === "error") {
+          if (response.data.value === "invalidAppName") {
+            setIsValidAppName(false);
+          }
+        } else if (response.data.type === "workerScript") {
+          setIsValidAppName(true);
+          setWorkerScript(response.data.value);
+        }
+      })
+      .catch((err) => {
+        console.log("Error: ");
+        console.log(err);
       });
   };
 
   const handleAppNameInput = (e) => {
     e.preventDefault();
     setAppNameInput(e.target.value);
-  };
-
-  const isValidAppName = (appDragAppName) => {
-    if (appDragAppName === "") return true;
-    var validSubdomainMatches = appDragAppName.match(
-      /[A-Za-z0-9](?:[A-Za-z0-9\-]{0,61}[A-Za-z0-9])?/g
-    );
-    if (validSubdomainMatches === null) return false;
-    return (
-      validSubdomainMatches.length === 1 &&
-      validSubdomainMatches[0].length === appDragAppName.length
-    );
   };
 
   const onSubmit = (data) => {
@@ -81,7 +75,7 @@ const Configuration = () => {
                   onChange={handleAppNameInput}
                 />
               </Form.Field>
-              {isValidAppName(appNameInput) ? (
+              {isValidAppName ? (
                 ""
               ) : (
                 <Label basic color="red" pointing>
@@ -95,13 +89,13 @@ const Configuration = () => {
                 color="teal"
                 size="large"
                 type="submit"
-                disabled={!isValidAppName(appNameInput)}
+                disabled={!isValidAppName}
               >
                 {!isCopied ? "COPY CODE" : "COPIED"}
               </Button>
             </Segment>
             <Transition
-              visible={isValidAppName(appNameInput)}
+              visible={isValidAppName}
               animation="scale"
               duration={500}
             >
@@ -113,7 +107,7 @@ const Configuration = () => {
               >
                 <TextArea
                   placeholder="Cloudflare Worker code..."
-                  value={isValidAppName(appNameInput) ? workerScript : ""}
+                  value={isValidAppName ? workerScript : ""}
                   rows={10}
                 />
               </Segment>

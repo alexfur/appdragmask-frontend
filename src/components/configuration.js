@@ -19,7 +19,7 @@ const Configuration = () => {
   const [appName, setAppName] = useState("");
   const [workerScript, setWorkerScript] = useState("");
 
-  const [isCopied, setCopied] = useClipboard("Hello", {
+  const [isCopied, setCopied] = useClipboard(workerScript, {
     successDuration: 1000,
   });
 
@@ -109,9 +109,6 @@ const Configuration = () => {
                 basic
                 style={{
                   textAlign: "center",
-                  // visibility: isValidAppDragAppName(appNameInput)
-                  //   ? "visible"
-                  //   : "hidden",
                 }}
               >
                 <TextArea
